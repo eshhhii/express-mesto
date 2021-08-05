@@ -16,7 +16,7 @@ const getUser = (req, res) => {
   User.findById(req.params.id)
     .then((user) => {
       if (!user) {
-        res.status(404).send({ message: "Нет пользователей" });
+        res.status(404).send({ message: "Пользователь не найден" });
         return;
       }
       res.send({ data: user });
@@ -33,8 +33,15 @@ const createUser = (req, res) => {
 
 const updateProfile = (req, res) => {
   const { name, about } = req.body;
-  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
-    .then((user) => res.send({ data: user }))
+  const userId = req.user._id;
+  console.log(userId);
+  User.findByIdAndUpdate(userId, { name, about }, { new: true })
+    .then((user) => {
+      if (!user) {
+        return res.status(404).send({ message: "Пользователь не найден" });
+      }
+      return res.status(200).send(user);
+    })
     .catch((err) => res.status(400).send({ message: err.message }));
 };
 
