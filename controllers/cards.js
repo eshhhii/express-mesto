@@ -2,14 +2,8 @@ const Card = require("../models/card");
 
 const getCards = (req, res) => {
   Card.find({})
-    .then((cards) => {
-      if (!cards) {
-        res.status(404).send({ message: "Нет карточек" });
-        return;
-      }
-      res.send({ data: cards });
-    })
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .then((cards) => res.status(200).send({ data: cards }))
+    .catch((err) => res.status(500).send({ message: err.message }));
 };
 
 const createCard = (req, res) => {
@@ -17,7 +11,15 @@ const createCard = (req, res) => {
   const owner = req.user._id;
   Card.create({ name, link, owner })
     .then((card) => res.status(200).send({ data: card }))
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === "ValidationError") {
+        res.status(400).send({
+          message: "Переданы некорректные данные в методы создания карточки",
+        });
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    });
 };
 
 const deleteCard = (req, res) => {
@@ -28,7 +30,15 @@ const deleteCard = (req, res) => {
       }
       return res.status(200).send("Карточка удалена");
     })
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === "CastError") {
+        res.status(400).send({
+          message: "Переданы некорректные данные в методы удалении карточки",
+        });
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    });
 };
 
 const likeCard = (req, res) => {
@@ -37,8 +47,21 @@ const likeCard = (req, res) => {
     { $addToSet: { likes: req.user._id } },
     { new: true }
   )
-    .then((card) => res.send({ data: card }))
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .then((data) => {
+      if (!data) {
+        return res.status(404).send({ message: "Нет данных" });
+      }
+      return res.status(200).send("Лайк поставлен");
+    })
+    .catch((err) => {
+      if (err.name === "CastError") {
+        res.status(400).send({
+          message: "Переданы некорректные данные для лайка",
+        });
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    });
 };
 
 const dislikeCard = (req, res) => {
@@ -47,8 +70,21 @@ const dislikeCard = (req, res) => {
     { $pull: { likes: req.user._id } },
     { new: true }
   )
-    .then((card) => res.send({ data: card }))
-    .catch((err) => res.status(400).send({ message: err.message }));
+    .then((data) => {
+      if (!data) {
+        return res.status(404).send({ message: "Нет данных" });
+      }
+      return res.status(200).send("Лайк убран");
+    })
+    .catch((err) => {
+      if (err.name === "CastError") {
+        res.status(400).send({
+          message: "Переданы некорректные данные для удаления лайка",
+        });
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    });
 };
 
 module.exports = {
