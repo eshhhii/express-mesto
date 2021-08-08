@@ -53,7 +53,7 @@ const updateProfile = (req, res) => {
   )
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
-      if (err.name === "CastError") {
+      if (err.name === "ValidationError") {
         res.status(400).send({
           message: "Переданы некорректные данные в методы обновления профиля",
         });
@@ -72,7 +72,7 @@ const updateAvatar = (req, res) => {
   )
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
-      if (err.name === "CastError") {
+      if (err.name === "ValidationError") {
         res.status(400).send({
           message: "Переданы некорректные данные в методы обновления аватара",
         });
