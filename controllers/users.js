@@ -1,4 +1,5 @@
 const User = require("../models/user");
+const bcrypt = require("bcryptjs");
 
 const getUsers = (req, res) => {
   User.find({})
@@ -28,8 +29,8 @@ const getUser = (req, res) => {
 };
 
 const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+  const { name, about, avatar, email, password } = req.body;
+  User.create({ name, about, avatar, email, password })
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.name === "ValidationError") {
@@ -81,6 +82,8 @@ const updateAvatar = (req, res) => {
       }
     });
 };
+
+const login = (req, res) => {};
 
 module.exports = {
   getUsers,
