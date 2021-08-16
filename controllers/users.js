@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const getUsers = (req, res) => {
   User.find({})
@@ -30,18 +31,27 @@ const getUser = (req, res) => {
 
 const createUser = (req, res) => {
   const { name, about, avatar, email, password } = req.body;
-  User.create({ name, about, avatar, email, password })
-    .then((user) => res.status(200).send({ data: user }))
-    .catch((err) => {
-      if (err.name === "ValidationError") {
-        res.status(400).send({
-          message:
-            "Переданы некорректные данные в методы создания пользователя",
-        });
-      } else {
-        res.status(500).send({ message: err.message });
-      }
+
+  if (!email || !password) {
+    res.status(400).send({
+      message: "Email или пароль могут быть пустыми",
     });
+  } else {
+    bcrypt.hash(password, 10).then((hash) => {
+      User.create({ name, about, avatar, email, password: hash })
+        .then((user) => res.status(200).send({ data: user }))
+        .catch((err) => {
+          if (err.name === "ValidationError") {
+            res.status(400).send({
+              message:
+                "Переданы некорректные данные в методы создания пользователя",
+            });
+          } else {
+            res.status(500).send({ message: err.message });
+          }
+        });
+    });
+  }
 };
 
 const updateProfile = (req, res) => {
@@ -83,7 +93,34 @@ const updateAvatar = (req, res) => {
     });
 };
 
-const login = (req, res) => {};
+const login = (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    res.status(400).send({
+      message: "Email или пароль могут быть пустыми",
+    });
+  } else {
+    User.findOne({ email })
+      .then((user) => {
+        if (!user) {
+          res.status(404).send({ message: "Пользователь не найден" });
+          return Promise.reject(new Error("Неправильные почта или пароль"));
+        }
+        res.send({ data: user });
+        return bcrypt.compare(password, user.password);
+      })
+      .catch((err) => {
+        if (err.name === "ValidationError") {
+          res.status(401).send({
+            message: "Переданы некорректные данные в методы обновления профиля",
+          });
+        } else {
+          res.status(500).send({ message: err.message });
+        }
+      });
+  }
+};
 
 module.exports = {
   getUsers,
@@ -91,4 +128,5 @@ module.exports = {
   createUser,
   updateProfile,
   updateAvatar,
+  login,
 };
