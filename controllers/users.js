@@ -105,20 +105,34 @@ const login = (req, res) => {
       .then((user) => {
         if (!user) {
           res.status(404).send({ message: "Пользователь не найден" });
-          return Promise.reject(new Error("Неправильные почта или пароль"));
-        }
-        res.send({ data: user });
-        return bcrypt.compare(password, user.password);
-      })
-      .catch((err) => {
-        if (err.name === "ValidationError") {
-          res.status(401).send({
-            message: "Переданы некорректные данные в методы обновления профиля",
-          });
         } else {
-          res.status(500).send({ message: err.message });
+          bcrypt.compare(password, user.password, (error, isValid) => {
+            if (error) {
+              res.status(401).send({ message: error });
+            }
+            if (!isValid) {
+              res.status(401).send({ message: "Неправильный пароль" });
+            }
+            if (isValid) {
+              const token = jwt.sign(
+                {
+                  _id: user._id,
+                },
+                "secret - key"
+              );
+              res
+                .cookie("jwt", token, {
+                  maxAge: 3600000 * 24 * 7,
+                  httpOnly: true,
+                  sameSite: true,
+                })
+                .status(200)
+                .send({ message: "Успешная авторизация" });
+            }
+          });
         }
-      });
+      })
+      .catch((err) => res.status(500).send({ message: "Ошибка авторизации" }));
   }
 };
 
