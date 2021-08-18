@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { isEmail } = require("validator");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -25,12 +26,26 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    validate: {
+      validator(email) {
+        return isEmail(email);
+      },
+    },
   },
   password: {
     type: String,
     required: true,
     unique: true,
+    select: false,
   },
 });
+
+function toJSON() {
+  const obj = this.toObject();
+  delete obj.password;
+  return obj;
+}
+
+userSchema.methods.toJSON = toJSON;
 
 module.exports = mongoose.model("user", userSchema);

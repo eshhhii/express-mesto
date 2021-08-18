@@ -39,7 +39,7 @@ const createUser = (req, res) => {
   } else {
     bcrypt.hash(password, 10).then((hash) => {
       User.create({ name, about, avatar, email, password: hash })
-        .then((user) => res.status(200).send({ data: user }))
+        .then((user) => res.status(200).send({ user: user.toJSON() }))
         .catch((err) => {
           if (err.name === "ValidationError") {
             res.status(400).send({
@@ -88,7 +88,7 @@ const updateAvatar = (req, res) => {
           message: "Переданы некорректные данные в методы обновления аватара",
         });
       } else {
-        res.status(500).send({ message: err.message });
+        res.status(500).send({ message: "Ошибка" });
       }
     });
 };
@@ -108,7 +108,7 @@ const login = (req, res) => {
         } else {
           bcrypt.compare(password, user.password, (error, isValid) => {
             if (error) {
-              res.status(401).send({ message: error });
+              res.status(401).send({ message: error.message });
             }
             if (!isValid) {
               res.status(401).send({ message: "Неправильный пароль" });
@@ -126,7 +126,6 @@ const login = (req, res) => {
                   httpOnly: true,
                   sameSite: true,
                 })
-                .status(200)
                 .send({ message: "Успешная авторизация" });
             }
           });
