@@ -43,9 +43,7 @@ const createUser = (req, res, next) => {
   User.findOne({ email })
     .then((user) => {
       if (user) {
-        res.status(403).send({
-          message: "Пользователь существует",
-        });
+        throw new BadUnique("Пользователь существует");
       } else {
         bcrypt.hash(password, 10).then((hash) => {
           User.create({ name, about, avatar, email, password: hash })
@@ -115,13 +113,7 @@ const updateAvatar = (req, res, next) => {
 
 const login = (req, res, next) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    res.status(400).send({
-      message: "Email или пароль могут быть пустыми",
-    });
-  }
-  return User.findOne({ email })
+  User.findOne({ email })
     .select("+password")
     .then((user) => {
       if (!user) {
@@ -129,10 +121,10 @@ const login = (req, res, next) => {
       } else {
         bcrypt.compare(password, user.password, (error, isValid) => {
           if (error) {
-            res.status(403).send({ message: "!!!" });
+            throw new BadRequest("Неверный запрос");
           }
           if (!isValid) {
-            res.status(403).send({ message: "Неправильный пароль" });
+            throw new BadAuth("Неправильный пароль");
           }
           if (isValid) {
             const token = jwt.sign(

@@ -10,6 +10,7 @@ const {
   validationLogin,
   validationCreateUser,
 } = require("./middlewares/validation");
+const { NotFound } = require("./middlewares/validation");
 
 const { PORT = 3000 } = process.env;
 
@@ -31,7 +32,7 @@ app.post("/signup", validationCreateUser, createUser);
 app.use("/", auth, userRouter);
 app.use("/", auth, cardRouter);
 app.use((req, res) => {
-  res.status(404).send({ message: "Роутер не найден" });
+  throw new NotFound("Роутер не найден");
 });
 app.use(errors());
 

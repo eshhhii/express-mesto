@@ -2,7 +2,7 @@ const { celebrate, Joi } = require("celebrate");
 
 const validationUserId = celebrate({
   params: Joi.object().keys({
-    userId: Joi.string().alphanum().hex().length(24),
+    id: Joi.string().length(24).hex(),
   }),
 });
 
@@ -36,7 +36,7 @@ const validationCreateCard = celebrate({
 
 const validationCardId = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().alphanum().hex().length(24),
+    cardId: Joi.string().length(24).hex(),
   }),
 });
 
