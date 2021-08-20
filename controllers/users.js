@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const BadRequest = require("../errors/BadRequest");
 const BadAuth = require("../errors/BadAuth");
 const NotFound = require("../errors/NotFound");
+const BadUnique = require("../errors/BadUnique");
 
 const getUsers = (req, res) => {
   User.find({})
@@ -48,6 +49,13 @@ const createUser = (req, res, next) => {
       } else {
         bcrypt.hash(password, 10).then((hash) => {
           User.create({ name, about, avatar, email, password: hash })
+            .catch((err) => {
+              if (err.name === "MongoError" && err.code === 11000) {
+                throw new BadUnique(
+                  "Пользователь с таким email уже существует"
+                );
+              }
+            })
             .then((user) => res.status(200).send({ user: user.toJSON() }))
             .catch((err) => {
               if (err.name === "ValidationError") {
@@ -120,7 +128,6 @@ const login = (req, res, next) => {
         throw new NotFound("Нет пользователя с таким id");
       } else {
         bcrypt.compare(password, user.password, (error, isValid) => {
-          console.log(error, isValid);
           if (error) {
             res.status(403).send({ message: "!!!" });
           }
@@ -152,13 +159,23 @@ const login = (req, res, next) => {
 };
 
 const getCurrentUser = (req, res, next) => {
-  User.findById(req.user._id)
+  const userId = req.user._id;
+  User.findById(userId)
     .then((user) => {
       if (!user) {
         throw new NotFound("Нет пользователя с таким id");
       }
+      res.send({ data: user });
     })
-    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === "CastError") {
+        throw new BadRequest(
+          "Переданы некорректные данные в методы получения пользователя"
+        );
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    })
     .catch(next);
 };
 

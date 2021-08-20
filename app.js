@@ -5,8 +5,11 @@ const userRouter = require("./routes/users");
 const cardRouter = require("./routes/cards");
 const { createUser, login } = require("./controllers/users");
 const auth = require("./middlewares/auth");
-const dotenv = require("dotenv");
-dotenv.config();
+const { errors } = require("celebrate");
+const {
+  validationLogin,
+  validationCreateUser,
+} = require("./middlewares/validation");
 
 const { PORT = 3000 } = process.env;
 
@@ -22,14 +25,15 @@ mongoose.connect("mongodb://localhost:27017/mestodb", {
 app.use(express.json());
 app.use(cookieParser());
 
-app.post("/signin", login);
-app.post("/signup", createUser);
+app.post("/signin", validationLogin, login);
+app.post("/signup", validationCreateUser, createUser);
 
 app.use("/", auth, userRouter);
 app.use("/", auth, cardRouter);
 app.use((req, res) => {
   res.status(404).send({ message: "Роутер не найден" });
 });
+app.use(errors());
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
