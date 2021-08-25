@@ -7,10 +7,10 @@ const BadAuth = require("../errors/BadAuth");
 const NotFound = require("../errors/NotFound");
 const BadUnique = require("../errors/BadUnique");
 
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.status(200).send({ data: users }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => next(err));
 };
 
 const getUser = (req, res, next) => {
@@ -24,17 +24,19 @@ const getUser = (req, res, next) => {
     .catch((err) => {
       if (err.name === "CastError") {
         throw new BadRequest(
-          "Переданы некорректные данные в методы получения пользователя"
+          "Переданы некорректные данные в методы получения пользователя",
         );
       } else {
-        res.status(500).send({ message: err.message });
+        next(err);
       }
     })
     .catch(next);
 };
 
 const createUser = (req, res, next) => {
-  const { name, about, avatar, email, password } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
 
   if (!email || !password) {
     res.status(400).send({
@@ -47,22 +49,28 @@ const createUser = (req, res, next) => {
         throw new BadUnique("Пользователь существует");
       } else {
         bcrypt.hash(password, 10).then((hash) => {
-          User.create({ name, about, avatar, email, password: hash })
+          User.create({
+            name,
+            about,
+            avatar,
+            email,
+            password: hash,
+          })
             .catch((err) => {
               if (err.name === "MongoError" && err.code === 11000) {
                 throw new BadUnique(
-                  "Пользователь с таким email уже существует"
+                  "Пользователь с таким email уже существует",
                 );
               }
             })
-            .then((user) => res.status(200).send({ user: user.toJSON() }))
+            .then((currentUser) => res.status(200).send({ currentUser: currentUser.toJSON() }))
             .catch((err) => {
               if (err.name === "ValidationError") {
                 throw new BadRequest(
-                  "Переданы некорректные данные в методы создания пользователя"
+                  "Переданы некорректные данные в методы создания пользователя",
                 );
               } else {
-                res.status(500).send({ message: err.message });
+                next(err);
               }
             });
         });
@@ -77,16 +85,16 @@ const updateProfile = (req, res, next) => {
   User.findByIdAndUpdate(
     userId,
     { name, about },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   )
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.name === "ValidationError") {
         throw new BadRequest(
-          "Переданы некорректные данные в методы обновления профиля"
+          "Переданы некорректные данные в методы обновления профиля",
         );
       } else {
-        res.status(500).send({ message: err.message });
+        next(err);
       }
     })
     .catch(next);
@@ -97,16 +105,16 @@ const updateAvatar = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { avatar },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   )
     .then((user) => res.status(200).send({ data: user }))
     .catch((err) => {
       if (err.name === "ValidationError") {
         throw new BadRequest(
-          "Переданы некорректные данные в методы обновления аватара"
+          "Переданы некорректные данные в методы обновления аватара",
         );
       } else {
-        res.status(500).send({ message: "Ошибка" });
+        next(err);
       }
     })
     .catch(next);
@@ -132,7 +140,7 @@ const login = (req, res, next) => {
               {
                 _id: user._id,
               },
-              "secret-key"
+              "secret-key",
             );
             res
               .cookie("jwt", token, {
@@ -140,7 +148,7 @@ const login = (req, res, next) => {
                 httpOnly: true,
                 sameSite: true,
               })
-              .send({ message: "Успешная авторизация" });
+              .send({ message: "Неверный логин либо пароль" });
           }
         });
       }
@@ -163,10 +171,10 @@ const getCurrentUser = (req, res, next) => {
     .catch((err) => {
       if (err.name === "CastError") {
         throw new BadRequest(
-          "Переданы некорректные данные в методы получения пользователя"
+          "Переданы некорректные данные в методы получения пользователя",
         );
       } else {
-        res.status(500).send({ message: err.message });
+        next(err);
       }
     })
     .catch(next);

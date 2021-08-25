@@ -10,7 +10,7 @@ const {
   validationLogin,
   validationCreateUser,
 } = require("./middlewares/validation");
-const { NotFound } = require("./middlewares/validation");
+const { NotFound } = require("./errors/NotFound");
 
 const { PORT = 3000 } = process.env;
 
@@ -31,9 +31,10 @@ app.post("/signup", validationCreateUser, createUser);
 
 app.use("/", auth, userRouter);
 app.use("/", auth, cardRouter);
-app.use((req, res) => {
+app.use(() => {
   throw new NotFound("Роутер не найден");
 });
+app.use(errors());
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
   res.status(statusCode).send({
@@ -41,8 +42,8 @@ app.use((err, req, res, next) => {
   });
   next();
 });
-app.use(errors());
 
+/* eslint-disable no-console */
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
 });
