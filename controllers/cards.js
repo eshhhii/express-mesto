@@ -42,7 +42,7 @@ const deleteCard = (req, res, next) => {
           if (!card) {
             throw new NotFound("Карточка не найдена");
           }
-          return res.status(200).send("Карточка удалена");
+          return res.status(200).send({ message: "Карточка удалена" });
         })
         .catch((err) => {
           if (err.name === "CastError") {
@@ -68,7 +68,7 @@ const likeCard = (req, res, next) => {
       if (!data) {
         throw new NotFound("Нет данных");
       }
-      return res.status(200).send("Лайк поставлен");
+      return res.status(200).send({ massege: "Лайк поставлен" });
     })
     .catch((err) => {
       if (err.name === "CastError") {
@@ -90,7 +90,7 @@ const dislikeCard = (req, res, next) => {
       if (!data) {
         throw new NotFound("Нет данных");
       }
-      return res.status(200).send("Лайк убран");
+      return res.status(200).send({ message: "Лайк убран" });
     })
     .catch((err) => {
       if (err.name === "CastError") {
