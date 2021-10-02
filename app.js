@@ -11,6 +11,7 @@ const {
   validationCreateUser,
 } = require("./middlewares/validation");
 const { NotFound } = require("./errors/NotFound");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
 
 const { PORT = 3000 } = process.env;
 
@@ -25,6 +26,7 @@ mongoose.connect("mongodb://localhost:27017/mestodb", {
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(requestLogger);
 
 app.post("/signin", validationLogin, login);
 app.post("/signup", validationCreateUser, createUser);
@@ -34,6 +36,7 @@ app.use("/", auth, cardRouter);
 app.use(() => {
   throw new NotFound("Роутер не найден");
 });
+app.use(errorLogger);
 app.use(errors());
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
